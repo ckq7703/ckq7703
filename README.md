@@ -1,15 +1,13 @@
 <h1 align="center">Xin chào👋, tôi là Cao Kiến Quốc</h1>
 <h3 align="center">👨‍💻 Kỹ sư Công nghệ Thông tin | Chuyên viên An ninh Mạng</h3>
 
-- 🔭 I’m currently working on **ITSM**
-
-- 🌱 I’m currently learning **ITILv4, CEHv12,...**
-
-- 👯 I’m looking to collaborate on **SOC**
-
-- 🤝 I’m looking for help with **Pentest**
-
-- 📫 How to reach me **ckq7703@gmail.com**
+- 🎓 Tốt nghiệp từ:
+  - **FPT Jetking** - chuyên ngành **An ninh Mạng**
+  - **Đại học HUTECH** - chuyên ngành **Công nghệ Phần mềm**
+- 💡 Đam mê lĩnh vực bảo mật, quy trình IT và tư vấn giải pháp công nghệ thông tin cho doanh nghiệp
+- 🌱 Hiện tại, tôi đang tập trung vào chuyên môn về **SOC (Security Operations Center)** và **Pentest** để phát triển thêm khả năng bảo mật hệ thống và ứng phó sự cố.
+- 📫 Liên hệ với tôi qua email: ckq7703@gmail.com
+- 📝 Xem thêm các dự án và bài viết của tôi tại: [Liên kết tới website cá nhân/portfolio]
 
 <h3 align="left">Connect with me:</h3>
 <p align="left">
