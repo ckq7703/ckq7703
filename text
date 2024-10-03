@@ -12,10 +12,10 @@ log.setLevel(logging.INFO)
 
 # Tạo datastore (nơi lưu trữ dữ liệu modbus)
 store = ModbusSlaveContext(
-    di=ModbusSlaveContext(0x00, values=[17]*100),  # Input Discretes
-    co=ModbusSlaveContext(0x00, values=[17]*100),  # Coils
-    hr=ModbusSlaveContext(0x00, values=[0]*100),   # Holding Registers
-    ir=ModbusSlaveContext(0x00, values=[17]*100),  # Input Registers
+    di=None,  # Input Discretes
+    co=None,  # Coils
+    hr=None,  # Holding Registers
+    ir=None,  # Input Registers
     zero_mode=True
 )
 
@@ -55,11 +55,9 @@ if __name__ == "__main__":
     # Khởi động server Modbus
     print("Modbus Server is starting...")
 
-    # Hàm định kỳ kiểm tra dữ liệu
-    update_data()
-
     # Khởi động server TCP với IP và Port
     StartTcpServer(context, identity=identity, address=("172.168.1.11", 502))
+
 
 
 
@@ -67,28 +65,30 @@ if __name__ == "__main__":
 from pymodbus.client.sync import ModbusTcpClient
 import time
 
-# Địa chỉ IP của Modbus Server (Kali-A0)
-SERVER_IP = '172.168.1.11'
-SERVER_PORT = 502
+# Khởi tạo Modbus client với địa chỉ IP của server
+client = ModbusTcpClient('172.168.1.11')
 
-# Khởi tạo Client kết nối đến Modbus Server
-client = ModbusTcpClient(SERVER_IP, port=SERVER_PORT)
-
-# Hàm gửi dữ liệu với số thứ tự
 def send_data(counter):
-    # Nội dung dữ liệu gửi đi
-    data = f'Dữ liệu được gửi từ hệ thống SCADA #{counter}'
+    message = f"Dữ liệu được gửi từ hệ thống SCADA #{counter}"
     
-    # Mã hóa dữ liệu thành chuỗi giá trị 16-bit để gửi qua Modbus (holding registers)
-    register_values = [ord(char) for char in data]  # Mỗi ký tự thành mã ASCII
+    # Chuyển chuỗi ký tự thành danh sách các giá trị ASCII
+    register_values = [ord(c) for c in message]
     
-    # Gửi dữ liệu qua Modbus (ghi vào holding registers từ vị trí 1)
+    # Gửi các giá trị tới Holding Register (index 1)
     client.write_registers(1, register_values)
-    print(f'Đã gửi: {data}')
+    print(f"Sent: {message}")
 
-# Vòng lặp gửi dữ liệu nhiều lần
-counter = 1
-while True:
-    send_data(counter)
-    counter += 1
-    time.sleep(5)  # Gửi dữ liệu mỗi 5 giây
+if client.connect():
+    counter = 0
+    try:
+        while True:
+            counter += 1
+            send_data(counter)
+            time.sleep(5)  # Gửi dữ liệu mỗi 5 giây
+    except KeyboardInterrupt:
+        print("Stopped by user")
+    finally:
+        client.close()
+else:
+    print("Connection failed")
+
