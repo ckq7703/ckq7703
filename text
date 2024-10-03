@@ -28,8 +28,32 @@ identity.ProductName = 'SCADA Modbus Server'
 identity.ModelName = 'Modbus Server'
 identity.MajorMinorRevision = '1.0'
 
-# Chạy Modbus TCP Server tại địa chỉ IP và cổng 502
-StartTcpServer(context, identity=identity, address=("172.168.1.11", 502))
+# Hàm cập nhật dữ liệu khi client ghi vào server
+def updating_writer(a):
+    context = a[0]
+    register = 1  # Thanh ghi số 1 (Holding Register)
+    slave_id = 0x00  # Mã slave
+    values = context[slave_id].getValues(register, 1)
+    log.info(f"Received data from client: {values}")
+
+# In dữ liệu nhận được từ client mỗi 5 giây
+from threading import Timer
+
+def update_data():
+    context = store.getValues(3, 1, count=10)
+    print(f"Dữ liệu hiện tại trên server: {context}")
+    Timer(5.0, update_data).start()
+
+# Bắt đầu lắng nghe
+if __name__ == "__main__":
+    # Khởi động server Modbus
+    print("Modbus Server is starting...")
+
+    # Hàm định kỳ kiểm tra dữ liệu
+    update_data()
+
+    # Khởi động server TCP với IP và Port
+    StartTcpServer(context, identity=identity, address=("172.168.1.11", 502))
 
 
 ---------------------------------
