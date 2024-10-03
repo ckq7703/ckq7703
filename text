@@ -1,4 +1,63 @@
-certbot certonly --config "/etc/letsencrypt.ini" --work-dir "/tmp/letsencrypt-lib" --logs-dir "/tmp/letsencrypt-log" --cert-name "npm-15" --agree-tos --authenticator webroot --email "ckq7703@gmail.com" --preferred-challenges "dns,http" --domains "pnetlab.itstar.edu.vn"
+from pymodbus.server.sync import StartTcpServer
+from pymodbus.device import ModbusDeviceIdentification
+from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
+from pymodbus.datastore import ModbusSequentialDataBlock
+import logging
+
+# Tạo log để theo dõi hoạt động
+logging.basicConfig()
+log = logging.getLogger()
+log.setLevel(logging.INFO)
+
+# Tạo Modbus Slave Data Store, với 100 vị trí holding registers
+store = ModbusSlaveContext(
+    di=ModbusSequentialDataBlock(0, [0]*100),
+    co=ModbusSequentialDataBlock(0, [0]*100),
+    hr=ModbusSequentialDataBlock(0, [0]*100),
+    ir=ModbusSequentialDataBlock(0, [0]*100))
+
+# Tạo ngữ cảnh Server
+context = ModbusServerContext(slaves=store, single=True)
+
+# Thông tin về Server
+identity = ModbusDeviceIdentification()
+identity.VendorName = 'SCADA-System'
+identity.ProductCode = 'ModbusServer'
+identity.VendorUrl = 'http://scada.local'
+identity.ProductName = 'SCADA Modbus Server'
+identity.ModelName = 'Modbus Server'
+identity.MajorMinorRevision = '1.0'
+
+# Chạy Modbus TCP Server tại địa chỉ IP và cổng 502
+StartTcpServer(context, identity=identity, address=("172.168.1.11", 502))
 
 
-sudo certbot certonly --work-dir "/tmp/letsencrypt-lib" --logs-dir "/tmp/letsencrypt-log" --cert-name "npm-15" --agree-tos --authenticator webroot --email "ckq7703@gmail.com" --preferred-challenges "dns,http" --domains "pnetlab.itstar.edu.vn"
+---------------------------------
+from pymodbus.client.sync import ModbusTcpClient
+import time
+
+# Địa chỉ IP của Modbus Server (Kali-A0)
+SERVER_IP = '172.168.1.11'
+SERVER_PORT = 502
+
+# Khởi tạo Client kết nối đến Modbus Server
+client = ModbusTcpClient(SERVER_IP, port=SERVER_PORT)
+
+# Hàm gửi dữ liệu với số thứ tự
+def send_data(counter):
+    # Nội dung dữ liệu gửi đi
+    data = f'Dữ liệu được gửi từ hệ thống SCADA #{counter}'
+    
+    # Mã hóa dữ liệu thành chuỗi giá trị 16-bit để gửi qua Modbus (holding registers)
+    register_values = [ord(char) for char in data]  # Mỗi ký tự thành mã ASCII
+    
+    # Gửi dữ liệu qua Modbus (ghi vào holding registers từ vị trí 1)
+    client.write_registers(1, register_values)
+    print(f'Đã gửi: {data}')
+
+# Vòng lặp gửi dữ liệu nhiều lần
+counter = 1
+while True:
+    send_data(counter)
+    counter += 1
+    time.sleep(5)  # Gửi dữ liệu mỗi 5 giây
