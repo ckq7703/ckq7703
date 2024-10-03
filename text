@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
 
 ---------------------------------
-from pymodbus.client.sync import ModbusTcpClient
+from pymodbus.client import ModbusTcpClient
 import time
 
 # Khởi tạo Modbus client với địa chỉ IP của server
@@ -91,4 +91,5 @@ if client.connect():
         client.close()
 else:
     print("Connection failed")
+
 
