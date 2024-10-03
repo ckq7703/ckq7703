@@ -1,44 +1,23 @@
+from pymodbus.server.sync import StartTcpServer
 from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
-from pymodbus.server import StartTcpServer
-from pymodbus.device import ModbusDeviceIdentification
 import logging
-import time
 
-# Cấu hình logging để theo dõi hoạt động
+# Cấu hình logging
 logging.basicConfig()
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
-# Tạo một datastore với các Holding Registers
-holding_registers = [0] * 100  # Giả sử có 100 Holding Registers
+# Tạo Holding Registers (có thể là một danh sách rỗng hoặc với giá trị mặc định)
+store = ModbusSlaveContext(hr=[0] * 100)  # 100 Holding Registers
 
-# Tạo datastore với holding registers
-store = ModbusSlaveContext(
-    hr=holding_registers,  # Holding Registers
-    zero_mode=True
-)
-
-# Tạo context Modbus với datastore
+# Tạo context Modbus
 context = ModbusServerContext(slaves=store, single=True)
 
-# Khởi tạo đối tượng nhận dạng thiết bị
-identity = ModbusDeviceIdentification()
-identity.VendorName = 'ModbusServer'
-identity.ProductCode = 'SCADA'
-identity.ProductName = 'Modbus Server'
-
-# Hàm in dữ liệu khi client ghi vào server
-def updating_writer():
-    # Lấy giá trị từ Holding Registers
-    values = context[0x00].getValues(3, 0, count=10)  # Địa chỉ 0, lấy 10 giá trị
-    log.info(f"Current Holding Register Values: {values}")
-
-# Bắt đầu lắng nghe
+# Khởi động server Modbus
 if __name__ == "__main__":
-    print("Modbus Server is starting...")
+    print("Starting Modbus server...")
+    StartTcpServer(context, address=("172.168.1.11", 502))
 
-    # Khởi động server TCP với IP và Port
-    StartTcpServer(context=context, identity=identity, address=("172.168.1.11", 502))
 
 
 
@@ -49,60 +28,22 @@ if __name__ == "__main__":
 
 ---------------------------------
 from pymodbus.client.sync import ModbusTcpClient
-import logging
 import time
 
-# Cấu hình logging để theo dõi hoạt động
-logging.basicConfig()
-log = logging.getLogger()
-log.setLevel(logging.INFO)
+# Kết nối tới server
+client = ModbusTcpClient('172.168.1.11', port=502)
+client.connect()
 
-# Thông tin kết nối
-server_ip = '172.168.1.11'
-server_port = 502
+# Ghi dữ liệu vào Holding Register
+message = [1, 2, 3, 4, 5]  # Dữ liệu cần ghi
+client.write_registers(0, message)
 
-# Khởi tạo client
-client = ModbusTcpClient(server_ip, port=server_port)
+# Đọc dữ liệu từ Holding Register
+result = client.read_holding_registers(0, 5)
+print(f"Received data: {result.registers}")
 
-# Kết nối đến server
-if not client.connect():
-    log.error("Connection failed!")
-else:
-    log.info("Connected to the Modbus server.")
-
-# Hàm gửi dữ liệu đến server
-def send_data(counter):
-    register_address = 0  # Địa chỉ bắt đầu của Holding Register
-    message = f"Dữ liệu được gửi từ hệ thống SCADA #{counter}"
-    
-    # Chuyển đổi dữ liệu thành giá trị số nguyên
-    register_values = [ord(c) for c in message]  # Chuyển đổi ký tự thành mã ASCII
-
-    # Giới hạn số lượng giá trị ghi vào không vượt quá 100 (số lượng Holding Registers)
-    if len(register_values) > 100:
-        register_values = register_values[:100]  # Giới hạn độ dài
-
-    log.info(f"Attempting to write {len(register_values)} registers...")
-    # Ghi dữ liệu vào Holding Register
-    result = client.write_registers(register_address, register_values)
-
-    if result.isError():
-        log.error(f"Failed to write registers! Error: {result}")
-    else:
-        log.info(f"Sent data: {message}")
-
-# Gửi dữ liệu mỗi 5 giây
-try:
-    counter = 1
-    while True:
-        send_data(counter)
-        counter += 1
-        time.sleep(5)
-
-except KeyboardInterrupt:
-    log.info("Client stopped by user.")
-
-finally:
+# Đóng kết nối
+client.close()
     client.close()
     log.info("Connection closed.")
 
