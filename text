@@ -2,23 +2,18 @@ from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
 from pymodbus.server import StartTcpServer
 from pymodbus.device import ModbusDeviceIdentification
 import logging
-from threading import Timer
 
 # Cấu hình logging để theo dõi hoạt động
 logging.basicConfig()
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
-# Tạo datastore (nơi lưu trữ dữ liệu modbus)
-# Khởi tạo Holding Registers với kích thước 100 và giá trị mặc định 0
-holding_registers = [0] * 100  # Tạo một danh sách 100 holding registers
+# Tạo một danh sách 100 holding registers với giá trị mặc định là 0
+holding_registers = [0] * 100
 
+# Tạo datastore với holding registers
 store = ModbusSlaveContext(
-    di=None,  # Input Discretes
-    co=None,  # Coils
     hr=holding_registers,  # Holding Registers
-    ir=None,  # Input Registers
-    zero_mode=True
 )
 
 # Tạo context Modbus với datastore
@@ -28,39 +23,24 @@ context = ModbusServerContext(slaves=store, single=True)
 identity = ModbusDeviceIdentification()
 identity.VendorName = 'ModbusServer'
 identity.ProductCode = 'SCADA'
-identity.VendorUrl = 'http://github.com/riptideio/pymodbus/'
 identity.ProductName = 'Modbus Server'
-identity.ModelName = 'Modbus Server'
-identity.MajorMinorRevision = '1.0'
 
-# Hàm cập nhật dữ liệu khi client ghi vào server
-def updating_writer(a):
-    context = a[0]
+# Hàm in dữ liệu khi client ghi vào server
+def updating_writer(context):
     register = 1  # Holding Register (index 1)
-    slave_id = 0x00  # Slave ID
+    values = context[0x00].getValues(register, 10)  # Lấy 10 giá trị
 
-    # Lấy các giá trị từ Holding Registers
-    values = context[slave_id].getValues(register, 10)  # Lấy 10 giá trị
-
-    # Chuyển đổi các giá trị thành chuỗi ký tự
-    received_message = ''.join(chr(v) for v in values if v != 0)  # Tránh ký tự null
+    # Chuyển đổi giá trị thành chuỗi ký tự và in ra
+    received_message = ''.join(chr(v) for v in values if v != 0)
     log.info(f"Received data from client: {received_message}")
-
-# In dữ liệu nhận được từ client mỗi 5 giây
-def update_data():
-    # Lấy giá trị của Holding Registers
-    current_values = context[0x00].getValues(3, 1, count=10)  # Chỉ số 3 là Holding Register
-    message = ''.join(chr(v) for v in current_values if v != 0)  # Chuyển đổi sang chuỗi
-    print(f"Dữ liệu hiện tại trên server: {message}")
-    Timer(5.0, update_data).start()  # Lặp lại mỗi 5 giây
 
 # Bắt đầu lắng nghe
 if __name__ == "__main__":
-    # Khởi động server Modbus
     print("Modbus Server is starting...")
+    
+    # Khởi động server TCP với IP và Port
+    StartTcpServer(context=context, identity=identity, address=("172.168.1.11", 502))
 
-    # Bắt đầu lắng nghe trên địa chỉ IP và port đã chỉ định
-    StartTcpServer(context=context, identity=identity, address=("172.168.1.11", 502), defer_start=False)
 
 
 
