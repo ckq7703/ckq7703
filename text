@@ -1,11 +1,13 @@
-from pymodbus.server.sync import StartTcpServer
+from pymodbus.server import StartTcpServer
 from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
 import logging
 
 # Cấu hình logging
-logging.basicConfig()
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Định dạng log
+    level=logging.INFO  # Mức độ log
+)
 log = logging.getLogger()
-log.setLevel(logging.INFO)
 
 # Tạo Holding Registers (có thể là một danh sách rỗng hoặc với giá trị mặc định)
 store = ModbusSlaveContext(hr=[0] * 100)  # 100 Holding Registers
@@ -15,8 +17,12 @@ context = ModbusServerContext(slaves=store, single=True)
 
 # Khởi động server Modbus
 if __name__ == "__main__":
-    print("Starting Modbus server...")
-    StartTcpServer(context, address=("172.168.1.11", 502))
+    log.info("Starting Modbus server...")  # Ghi log thông tin khởi động server
+    try:
+        StartTcpServer(context, address=("172.168.1.11", 502))
+    except Exception as e:
+        log.error(f"Error starting Modbus server: {e}")  # Ghi log lỗi nếu có
+
 
 
 
@@ -27,7 +33,7 @@ if __name__ == "__main__":
 
 
 ---------------------------------
-from pymodbus.client.sync import ModbusTcpClient
+from pymodbus.client import ModbusTcpClient
 import time
 
 # Kết nối tới server
