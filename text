@@ -1,5 +1,5 @@
 from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
-from pymodbus.server.sync import StartTcpServer
+from pymodbus.server import StartTcpServer
 from pymodbus.device import ModbusDeviceIdentification
 import logging
 from threading import Timer
@@ -60,7 +60,8 @@ if __name__ == "__main__":
     print("Modbus Server is starting...")
 
     # Bắt đầu lắng nghe trên địa chỉ IP và port đã chỉ định
-    StartTcpServer(context=context, identity=identity, address=("172.168.1.11", 502))
+    StartTcpServer(context=context, identity=identity, address=("172.168.1.11", 502), defer_start=False)
+
 
 
 
