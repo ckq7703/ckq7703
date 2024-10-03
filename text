@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
 
 ---------------------------------
-from pymodbus.client import ModbusTcpClient
+from pymodbus.client.sync import ModbusTcpClient
 import logging
 import time
 
@@ -78,11 +78,16 @@ def send_data(counter):
     # Chuyển đổi dữ liệu thành giá trị số nguyên
     register_values = [ord(c) for c in message]  # Chuyển đổi ký tự thành mã ASCII
 
+    # Giới hạn số lượng giá trị ghi vào không vượt quá 100 (số lượng Holding Registers)
+    if len(register_values) > 100:
+        register_values = register_values[:100]  # Giới hạn độ dài
+
+    log.info(f"Attempting to write {len(register_values)} registers...")
     # Ghi dữ liệu vào Holding Register
     result = client.write_registers(register_address, register_values)
 
     if result.isError():
-        log.error("Failed to write registers!")
+        log.error(f"Failed to write registers! Error: {result}")
     else:
         log.info(f"Sent data: {message}")
 
@@ -100,5 +105,6 @@ except KeyboardInterrupt:
 finally:
     client.close()
     log.info("Connection closed.")
+
 
 
