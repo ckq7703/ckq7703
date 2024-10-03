@@ -1,47 +1,53 @@
+from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
 from pymodbus.server.sync import StartTcpServer
 from pymodbus.device import ModbusDeviceIdentification
-from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
-from pymodbus.datastore import ModbusSequentialDataBlock
+from pymodbus.transaction import ModbusRtuFramer, ModbusAsciiFramer
 import logging
+from threading import Timer
 
-# Tạo log để theo dõi hoạt động
+# Cấu hình logging để theo dõi hoạt động
 logging.basicConfig()
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
-# Tạo Modbus Slave Data Store, với 100 vị trí holding registers
+# Tạo datastore (nơi lưu trữ dữ liệu modbus)
 store = ModbusSlaveContext(
-    di=ModbusSequentialDataBlock(0, [0]*100),
-    co=ModbusSequentialDataBlock(0, [0]*100),
-    hr=ModbusSequentialDataBlock(0, [0]*100),
-    ir=ModbusSequentialDataBlock(0, [0]*100))
+    di=ModbusSlaveContext(0x00, values=[17]*100),  # Input Discretes
+    co=ModbusSlaveContext(0x00, values=[17]*100),  # Coils
+    hr=ModbusSlaveContext(0x00, values=[0]*100),   # Holding Registers
+    ir=ModbusSlaveContext(0x00, values=[17]*100),  # Input Registers
+    zero_mode=True
+)
 
-# Tạo ngữ cảnh Server
+# Tạo context Modbus với datastore
 context = ModbusServerContext(slaves=store, single=True)
 
-# Thông tin về Server
+# Khởi tạo đối tượng nhận dạng thiết bị (có thể để mặc định)
 identity = ModbusDeviceIdentification()
-identity.VendorName = 'SCADA-System'
-identity.ProductCode = 'ModbusServer'
-identity.VendorUrl = 'http://scada.local'
-identity.ProductName = 'SCADA Modbus Server'
+identity.VendorName = 'ModbusServer'
+identity.ProductCode = 'SCADA'
+identity.VendorUrl = 'http://github.com/riptideio/pymodbus/'
+identity.ProductName = 'Modbus Server'
 identity.ModelName = 'Modbus Server'
 identity.MajorMinorRevision = '1.0'
 
 # Hàm cập nhật dữ liệu khi client ghi vào server
 def updating_writer(a):
     context = a[0]
-    register = 1  # Thanh ghi số 1 (Holding Register)
-    slave_id = 0x00  # Mã slave
-    values = context[slave_id].getValues(register, 1)
-    log.info(f"Received data from client: {values}")
+    register = 1  # Holding Register (index 1)
+    slave_id = 0x00  # Slave ID
+    values = context[slave_id].getValues(register, 10)  # Lấy 10 giá trị
+
+    # Chuyển đổi các giá trị thành chuỗi ký tự từ client gửi lên
+    received_message = ''.join(chr(v) for v in values)
+    log.info(f"Received data from client: {received_message}")
 
 # In dữ liệu nhận được từ client mỗi 5 giây
-from threading import Timer
-
 def update_data():
     context = store.getValues(3, 1, count=10)
-    print(f"Dữ liệu hiện tại trên server: {context}")
+    # In ra giá trị của các Holding Register
+    message = ''.join(chr(v) for v in context)
+    print(f"Dữ liệu hiện tại trên server: {message}")
     Timer(5.0, update_data).start()
 
 # Bắt đầu lắng nghe
@@ -54,6 +60,7 @@ if __name__ == "__main__":
 
     # Khởi động server TCP với IP và Port
     StartTcpServer(context, identity=identity, address=("172.168.1.11", 502))
+
 
 
 ---------------------------------
