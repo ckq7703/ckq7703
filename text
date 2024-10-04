@@ -1,51 +1,37 @@
-2024-10-04 09:13:35,404:DEBUG:certbot._internal.log:Exiting abnormally:
-Traceback (most recent call last):
-  File "/usr/bin/certbot", line 33, in <module>
-    sys.exit(load_entry_point('certbot==1.21.0', 'console_scripts', 'certbot')())
-  File "/usr/lib/python3/dist-packages/certbot/main.py", line 15, in main
-    return internal_main.main(cli_args)
-  File "/usr/lib/python3/dist-packages/certbot/_internal/main.py", line 1574, in main
-    return config.func(config, plugins)
-  File "/usr/lib/python3/dist-packages/certbot/_internal/main.py", line 1287, in run
-    new_lineage = _get_and_save_cert(le_client, config, domains,
-  File "/usr/lib/python3/dist-packages/certbot/_internal/main.py", line 133, in _get_and_save_cert
-    lineage = le_client.obtain_and_enroll_certificate(domains, certname)
-  File "/usr/lib/python3/dist-packages/certbot/_internal/client.py", line 459, in obtain_and_enroll_certificate
-    cert, chain, key, _ = self.obtain_certificate(domains)
-  File "/usr/lib/python3/dist-packages/certbot/_internal/client.py", line 389, in obtain_certificate
-    orderr = self._get_order_and_authorizations(csr.data, self.config.allow_subset_of_names)
-  File "/usr/lib/python3/dist-packages/certbot/_internal/client.py", line 439, in _get_order_and_authorizations
-    authzr = self.auth_handler.handle_authorizations(orderr, self.config, best_effort)
-  File "/usr/lib/python3/dist-packages/certbot/_internal/auth_handler.py", line 70, in handle_authorizations
-    resps = self.auth.perform(achalls)
-  File "/usr/lib/python3/dist-packages/certbot_nginx/_internal/configurator.py", line 1179, in perform
-    self.restart()
-  File "/usr/lib/python3/dist-packages/certbot_nginx/_internal/configurator.py", line 967, in restart
-    nginx_restart(self.conf('ctl'), self.nginx_conf, self.conf('sleep-seconds'))
-  File "/usr/lib/python3/dist-packages/certbot_nginx/_internal/configurator.py", line 1254, in nginx_restart
-    raise errors.MisconfigurationError(
-certbot.errors.MisconfigurationError: nginx restart failed:
-nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Unknown error)
-nginx: [emerg] bind() to [::]:80 failed (98: Unknown error)
-nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Unknown error)
-nginx: [emerg] bind() to [::]:80 failed (98: Unknown error)
-nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Unknown error)
-nginx: [emerg] bind() to [::]:80 failed (98: Unknown error)
-nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Unknown error)
-nginx: [emerg] bind() to [::]:80 failed (98: Unknown error)
-nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Unknown error)
-nginx: [emerg] bind() to [::]:80 failed (98: Unknown error)
-nginx: [emerg] still could not bind()
+version: '3.8'
+services:
+  app:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    ports:
+      # These ports are in format <host-port>:<container-port>
+      - '80:80' # Public HTTP Port
+      - '443:443' # Public HTTPS Port
+      - '81:81' # Admin Web Port
+      # Add any other Stream port you want to expose
+      # - '21:21' # FTP
+    environment:
+      # Mysql/Maria connection parameters:
+      DB_MYSQL_HOST: "db"
+      DB_MYSQL_PORT: 3306
+      DB_MYSQL_USER: "npm"
+      DB_MYSQL_PASSWORD: "npm"
+      DB_MYSQL_NAME: "npm"
+      # Uncomment this if IPv6 is not enabled on your host
+      # DISABLE_IPV6: 'true'
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+    depends_on:
+      - db
 
-2024-10-04 09:13:35,407:ERROR:certbot._internal.log:nginx restart failed:
-nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Unknown error)
-nginx: [emerg] bind() to [::]:80 failed (98: Unknown error)
-nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Unknown error)
-nginx: [emerg] bind() to [::]:80 failed (98: Unknown error)
-nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Unknown error)
-nginx: [emerg] bind() to [::]:80 failed (98: Unknown error)
-nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Unknown error)
-nginx: [emerg] bind() to [::]:80 failed (98: Unknown error)
-nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Unknown error)
-nginx: [emerg] bind() to [::]:80 failed (98: Unknown error)
-nginx: [emerg] still could not bind()
+  db:
+    image: 'jc21/mariadb-aria:latest'
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: 'npm'
+      MYSQL_DATABASE: 'npm'
+      MYSQL_USER: 'npm'
+      MYSQL_PASSWORD: 'npm'
+    volumes:
+      - ./mysql:/var/lib/mysql
