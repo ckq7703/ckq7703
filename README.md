@@ -1,9 +1,3 @@
-<h1 align="center">Xin chào👋, tôi là Cao Kiến Quốc</h1>
-<h3 align="center">👨‍💻 Kỹ sư Công nghệ Thông tin | Chuyên viên An ninh Mạng</h3>
-
-- 🎓 Tốt nghiệp từ:
-  - **FPT Jetking** - chuyên ngành **An ninh Mạng**
-  - **Đại học HUTECH** - chuyên ngành **Công nghệ Phần mềm**
 
 <h3 align="left">Connect with me:</h3>
 <p align="left">
